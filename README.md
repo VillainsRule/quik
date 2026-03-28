@@ -1,20 +1,11 @@
 <div align='center'>
     <h1>quik</h1>
-    <h3>a quik way to manage cloudflare port forwarding</h3>
+    <h3>a quik cli-based way to manage cloudflare.</h3>
 </div>
 
 <br><br>
 
 ## setup
-first, setup cloudflare:
-
-1. stop using windows, this doesn't work on windows
-2. create a cloudflare account if you do not yet have one
-3. add domain(s) to cloudflare if you do not yet have them
-4. create and set up a tunnel in zero trust as described [here](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-remote-tunnel)
-
-then, download quik:
-
 1. find the executable intended for your system in [dist](./dist)
 2. download and run it
 
@@ -30,7 +21,7 @@ if you want to build quik yourself (builds on mac/linux only):
 1. install [bun](https://bun.sh)
 2. clone the repo: `git clone https://github.com/VillainsRule/quik && cd quik`
 3. build quik: `./build.sh`
-   
+
 <br><br>
 
 ## creating a cloudflare API key
@@ -48,4 +39,4 @@ the summary should look like this:
 3. put it into quik
 
 <br><br>
-<h5 align='center'>made with :heart: by VillainsRule</h5>
+<h5 align='center'>made with :heart:</h5>
