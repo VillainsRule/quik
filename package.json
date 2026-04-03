@@ -2,6 +2,10 @@
     "name": "quik-cli",
     "type": "module",
     "main": "./src/cli.ts",
+    "scripts": {
+        "build": "bun build --compile --bytecode --minify --outfile ~/quik ./src/cli.ts",
+        "buildall": "./build.sh"
+    },
     "dependencies": {
         "enquirer": "^2.4.1"
     },
