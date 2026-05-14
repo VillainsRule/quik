@@ -49,21 +49,36 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
 
 (async () => {
     const tokenFile = path.join(quikDir, 'token.txt');
+    let cloudflareApiToken!: string;
+
     if (!fs.existsSync(tokenFile)) {
-        const token = await prompt({
-            type: 'input',
-            name: 'token',
-            message: 'enter your Cloudflare API token (see README)',
-            initial: ''
-        }) as { token: string };
+        const wranglerConfigPath = (
+            process.platform === 'darwin' ? path.join(os.homedir(), 'Library/Preferences/.wrangler/config/default.toml') :
+                process.platform === 'win32' ? path.join(process.env.APPDATA! || '', '.wrangler/config/default.toml') :
+                    path.join(os.homedir(), '.wrangler/config/default.toml')
+        )
 
-        fs.writeFileSync(tokenFile, token.token.trim());
-    }
+        if (fs.existsSync(wranglerConfigPath)) {
+            const wranglerConfig = fs.readFileSync(wranglerConfigPath, 'utf-8');
+            const tokenMatch = wranglerConfig.match(/oauth_token\s*=\s*"(.*?)"/);
 
-    const cloudflareApiToken = fs.readFileSync(tokenFile, 'utf-8').trim();
+            if (tokenMatch) cloudflareApiToken = tokenMatch[1];
+            else {
+                const token = await prompt({
+                    type: 'input',
+                    name: 'token',
+                    message: 'enter your Cloudflare API token (see README)',
+                    initial: ''
+                }) as { token: string };
+
+                cloudflareApiToken = token.token.trim();
+                fs.writeFileSync(tokenFile, token.token.trim());
+            }
+        }
+    } else cloudflareApiToken = fs.readFileSync(tokenFile, 'utf-8').trim();
 
     const cloudflaredProcesses = execSync('ps aux | grep cloudflared', { stdio: 'pipe' });
-    const grepProcess = cloudflaredProcesses.toString().split('\n').find(line => line.includes('run --token ey'));
+    const grepProcess = cloudflaredProcesses.toString().split('\n').find((line) => line.includes('cloudflared') && line.includes('run') && line.includes('--token ey'));
     if (!grepProcess) {
         red('no active cloudflared tunnel found.')
         process.exit(1);
@@ -96,7 +111,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
                 'Content-Type': 'application/json'
             }
         });
-        const zones = await zoneReq.json();
+        const zones = await zoneReq.json() as any;
 
         const tunnelConfReq = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/cfd_tunnel/${tunnelId}/configurations`, {
             headers: {
@@ -104,7 +119,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
                 'Content-Type': 'application/json'
             }
         });
-        let tunnelConfig = await tunnelConfReq.json();
+        let tunnelConfig = await tunnelConfReq.json() as any;
 
         const answers = await prompt([
             {
@@ -147,7 +162,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
             }
         });
 
-        const a = await aReq.json();
+        const a = await aReq.json() as any;
         if (!a.success) {
             red(`failed to update tunnel configuration: ${a.errors.map((e: any) => e.message).join(', ')}`);
             process.exit(1);
@@ -168,7 +183,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
             }
         });
 
-        const b = await bReq.json();
+        const b = await bReq.json() as any;
         if (b.success) green(`tunnel updated successfully! you can access your server at https://${answers.sub}.${answers.domain}`)
         else red(`failed to create DNS record: ${b.errors.map((e: any) => e.message).join(', ')}`);
     } else if (process.argv[2] === 'list') {
@@ -179,7 +194,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
             }
         });
 
-        const tunnelConfig = await tunnelConfigReq.json();
+        const tunnelConfig = await tunnelConfigReq.json() as any;
         const rules = tunnelConfig.result.config.ingress.filter((rule: any) => rule.hostname).map((rule: any) => rule.hostname);
 
         if (rules.length === 0) {
@@ -196,7 +211,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
                 'Content-Type': 'application/json'
             }
         });
-        let tunnelConfig = await tunnelConfigReq.json();
+        let tunnelConfig = await tunnelConfigReq.json() as any;
 
         const answers = await prompt({
             type: 'multiselect',
@@ -226,7 +241,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
             }
         });
 
-        const zones = await zoneReq.json();
+        const zones = await zoneReq.json() as any;
         await Promise.all(answers.domain.map(async (domain) => {
             const zoneName = domain.split('.').splice(-2).join('.');
 
@@ -240,7 +255,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
                 }
             });
 
-            const records = await recordReq.json();
+            const records = await recordReq.json() as any;
             const record = records.result.find((r: any) => r.name === domain && r.type === 'CNAME');
             if (record) {
                 const cReq = await fetch(`https://api.cloudflare.com/client/v4/zones/${zone.id}/dns_records/${record.id}`, {
@@ -250,7 +265,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
                     }
                 });
 
-                const c = await cReq.json();
+                const c = await cReq.json() as any;
                 if (!c.success) {
                     red(`failed to delete DNS record: ${c.errors.map((e: any) => e.message).join(', ')}`);
                     process.exit(1);
@@ -270,7 +285,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
             }
         });
 
-        const a = await aReq.json();
+        const a = await aReq.json() as any;
         if (a.success) green('selected subdomains deleted successfully!')
         else red(`failed to update tunnel configuration: ${a.errors.map((e: any) => e.message).join(', ')}`);
     } else if (process.argv[2] === 'purge') {
@@ -287,7 +302,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
             }
         });
 
-        const zones = await zoneReq.json();
+        const zones = await zoneReq.json() as any;
         for (const hostname of hostnames) {
             const zoneName = hostname.split('.').splice(-2).join('.');
             const zone = zones.result.find((z: any) => z.name === zoneName);
@@ -305,7 +320,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
                 }
             });
 
-            const purgeResult = await purgeReq.json();
+            const purgeResult = await purgeReq.json() as any;
             if (purgeResult.success) green(`cache purged successfully for ${hostname}`);
             else red(`failed to purge cache for ${hostname}: ${purgeResult.errors.map((e: any) => e.message).join(', ')}`);
         }
