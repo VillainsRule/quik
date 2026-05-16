@@ -5,7 +5,23 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-import type { GenericError, TunnelConfigResult } from './api';
+interface GenericError {
+    success: false;
+    errors: { message: string }[];
+}
+
+interface TunnelConfigResult {
+    success: true;
+    result: {
+        config: {
+            ingress: ({
+                service: string;
+                hostname: string;
+                originRequest: {};
+            } | { service: 'http_status:404' })[];
+        }
+    }
+}
 
 const { prompt } = enquirer;
 
@@ -52,7 +68,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
 (async () => {
     const cloudflaredProcesses = execSync('ps aux | grep cloudflared', { stdio: 'pipe' });
     const grepProcess = cloudflaredProcesses.toString().split('\n').find((line) => line.includes('cloudflared') && line.includes('run') && line.includes('--token ey'));
-    if (!grepProcess) throw 'no active cloudflared tunnel found';
+    if (!grepProcess) (red('failed to find cloudflared process. make sure you have an active tunnel running.'), process.exit(1));
 
     const tunnelRunToken = grepProcess.match(/--token\s+([^\s]+)/)?.[1];
     if (!tunnelRunToken) (red('failed to extract tunnel token from cloudflared process. are you logged in?'), process.exit(1));
@@ -157,7 +173,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
         });
 
         const a = await aReq.json() as { success: true } | GenericError;
-        if (!a.success) (red(`failed to update tunnel configuration: ${a.errors.map((e: any) => e.message).join(', ')}`), process.exit(1));
+        if (!a.success) (red(`failed to update tunnel configuration: ${a.errors.map((e) => e.message).join(', ')}`), process.exit(1));
 
         const zoneId = zones.result.find((zone) => zone.name === answers.domain)?.id;
         const bReq = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records`, {
