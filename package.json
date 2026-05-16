@@ -4,7 +4,8 @@
     "main": "./src/cli.ts",
     "scripts": {
         "build": "bun build --compile --bytecode --minify --outfile ~/quik ./src/cli.ts",
-        "buildall": "./build.sh"
+        "buildall": "./build.sh",
+        "dev": "bun src/cli"
     },
     "dependencies": {
         "enquirer": "^2.4.1"
