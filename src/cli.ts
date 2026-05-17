@@ -279,5 +279,6 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
             if (purgeResult.success) green(`cache purged successfully for ${hostname}`);
             else red(`failed to purge cache for ${hostname}: ${purgeResult.errors.map((e) => e.message).join(', ')}`);
         }
-    } else red('invalid command. usage: quik [add|list|delete|remove|rm|purge]');
+    } else if (process.argv[2] === 'token') console.log(cfToken);
+    else red('invalid command. usage: quik [add|list|delete|remove|rm|purge]');
 })();
