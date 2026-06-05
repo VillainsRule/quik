@@ -12,6 +12,9 @@
 4. `chmod +x ~/quik`
 5. the executable is at `~/quik`
 
+> [!NOTE]
+> bun is required to compile the binaries, but quik's code itself does not rely on bun
+
 <br>
 
 optionally, add a terminal alias:
