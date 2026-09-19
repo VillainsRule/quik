@@ -3,7 +3,7 @@
     "type": "module",
     "main": "./src/cli.ts",
     "scripts": {
-        "build": "bun build --compile --bytecode --minify --outfile ~/quik ./src/cli.ts",
+        "build": "bun build --compile --bytecode --minify --outfile ~/sh/quik ./src/cli.ts && codesign --sign - ~/sh/quik",
         "buildall": "./build.sh",
         "dev": "bun src/cli"
     },
