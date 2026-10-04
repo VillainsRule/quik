@@ -238,8 +238,7 @@ if (!fs.existsSync(quikDir)) fs.mkdirSync(quikDir, { recursive: true });
 
             const record = records.result.find((r) => r.name === domain && r.type === 'CNAME');
             if (record) {
-                const cReq = await fetch(`https://api.cloudflare.com/client/v4/zones/${zone.id}/dns_records/${record.id}`, { headers });
-
+                const cReq = await fetch(`https://api.cloudflare.com/client/v4/zones/${zone.id}/dns_records/${record.id}`, { method: 'DELETE', headers });
                 const c = await cReq.json() as { success: true } | GenericError;
                 if (!c.success) (red(`failed to delete DNS record: ${c.errors.map((e) => e.message).join(', ')}`), process.exit(1));
             } else red(`DNS record for ${domain} not found.`);
